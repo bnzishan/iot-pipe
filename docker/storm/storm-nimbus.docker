@@ -1,0 +1,57 @@
+FROM baqend/java:8u171
+MAINTAINER wingerath wolfram@wingerath.org
+
+# The used storm version can also be supplied like this with the build command like this:
+# --build-arg BIN_VERSION=apache-storm-1.0.2
+ARG BIN_VERSION=apache-storm-1.2.2
+
+
+WORKDIR /usr/share/storm
+
+# DRPC and remote deployment
+EXPOSE 6627 3772 3773
+
+# supervisor: worker ports
+# EXPOSE 6700 6701 6702 6703
+# logviewer
+EXPOSE 8000
+
+
+# Install and set everything up
+RUN \
+   alias python=python3 \
+&& apt-get update -y \
+&& apt-get install -y \
+ --no-install-recommends apt-utils \
+   net-tools \
+   python \
+&& wget -q -N http://mirrors.gigenet.com/apache/storm/${BIN_VERSION}/${BIN_VERSION}.tar.gz
+
+RUN tar --strip-components=1 -C /usr/share/storm -xvf ${BIN_VERSION}.tar.gz \
+&& rm ${BIN_VERSION}.tar.gz \
+&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+
+
+ENV PATH $PATH:/usr/share/storm/bin
+
+ENV STORM_HOME /usr/share/storm
+
+
+# add startup script
+ADD storm/entrypoint-script.sh entrypoint-script.sh
+RUN chmod +x entrypoint-script.sh
+
+ADD storm/cluster.xml log4j2/cluster.xml
+ADD storm/worker.xml log4j2/worker.xml
+ADD storm/storm.yaml  $STORM_HOME/conf/storm.yaml
+
+ADD target/main-module-1.0.0.jar /benchmark/main-module-1.0.0.jar
+ADD  storm/storm-graphite-1.0.0-SNAPSHOT-all.jar $STORM_HOME/lib/storm-graphite-1.0.0-SNAPSHOT-all.jar
+
+ADD storm/run-nimbus.sh run-nimbus.sh
+RUN chmod +x  run-nimbus.sh
+
+#CMD ["/usr/share/storm/entrypoint-script.sh"]
+
+CMD ["/usr/share/storm/run-nimbus.sh"]

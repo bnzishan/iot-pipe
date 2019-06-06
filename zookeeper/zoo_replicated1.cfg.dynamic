@@ -1,0 +1,4 @@
+server.1=hostname:31100:31101:participant;31102
+server.2=hostname:31200:31201:participant;31202
+server.3=hostname:31300:31301:participant;31302
+

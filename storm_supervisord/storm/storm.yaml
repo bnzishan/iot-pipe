@@ -1,0 +1,48 @@
+storm.zookeeper.servers:
+           - "%zookeeper%"
+storm.zookeeper.port: "%port%"
+#nimbus.seeds: ["%nimbus%"]
+nimbus.host: "%nimbus%"  # deprecated
+#storm.local.dir: "%stormLocalDir%"  # default to $STORM_HOME/storm-local
+storm.local.hostname: "%local%"
+drpc.servers:
+  - "%nimbus%"
+drpc.port: 3772
+drpc.invocations.port: 3773
+nimbus.thrift.max_buffer_size: 20480000
+worker.childopts: "-Xmx4048m"
+ui.port: 8008
+
+
+
+# can be chnaged/set programmatically using  conf.registerMetricsConsumer(GraphiteMetricsConsumer.class, 1);
+#topology.builtin.metrics.bucket.size.secs: 10
+#topology.metrics.consumer.register:
+  # - class: "com.verisign.storm.metrics.GraphiteMetricsConsumer"
+   #  parallelism.hint: 1
+   #  argument:
+    #   metrics.reporter.name: "com.verisign.storm.metrics.reporters.graphite.GraphiteReporter"
+     #  metrics.graphite.host: "%graphite%"
+      # metrics.graphite.port: "2003"
+      # metrics.graphite.prefix: "production.apps.graphitedemo"
+      # metrics.graphite.min-connect-attempt-interval-secs: "5"
+       #metrics.graphite.protocol: "udp"
+
+
+
+### Note: This is Storm's storm.yaml configuration file
+### Note: Kafka producer settings can be passed as registration arguments.
+
+# Controls the time interval between metric reports
+#topology.builtin.metrics.bucket.size.secs: 10
+#topology.metrics.consumer.register:
+#  - class: "com.verisign.storm.metrics.GraphiteMetricsConsumer"
+#    parallelism.hint: 1
+#    argument:
+#      metrics.reporter.name: "com.verisign.storm.metrics.reporters.kafka.KafkaReporter"
+#      metrics.graphite.prefix: "storm.test"
+#      metrics.kafka.topic: "metricsTopic"
+#      metrics.kafka.metadata.broker.list: "broker1.example.com:9092,broker2.example.com:9092,broker3.example.com:9092"
+#      # Optional arguments can also be supplied to integrate with Confluent's Schema Registry
+#      metrics.kafka.schema.registry.url: "http://schemaregistry.example.com:8081"
+#     metrics.kafka.schema.registry.id.capacity: 100

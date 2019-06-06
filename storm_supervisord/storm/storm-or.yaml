@@ -1,0 +1,13 @@
+storm.zookeeper.servers: ["%zookeeper%"]
+storm.zookeeper.port: "%port%"
+nimbus.seeds: ["%nimbus%"]
+#nimbus.host: "%nimbus%"  # deprecated
+#storm.local.dir: "%stormLocalDir%"  # default to $STORM_HOME/storm-local
+storm.local.hostname: "%local%"
+drpc.servers:
+  - "%nimbus%"
+drpc.port: 3772
+drpc.invocations.port: 3773
+nimbus.thrift.max_buffer_size: 20480000
+
+

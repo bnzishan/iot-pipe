@@ -1,0 +1,58 @@
+#FROM alpine:3.5
+
+#FROM openjdk:7-alpine
+
+FROM openjdk:8-alpine
+
+# Install basic stuff =)
+RUN apk add --no-cache \
+  bash \
+  ca-certificates \
+  nginx \
+  openssl \
+  py2-pip \
+  supervisor \
+  tini \
+  && pip install \
+  supervisor-stdout \
+  gunicorn
+
+# Install graphite
+ENV GRAPHITE_ROOT /opt/graphite
+
+RUN apk add --no-cache \
+  alpine-sdk \
+  fontconfig \
+  libffi \
+  libffi-dev \
+  python-dev \
+  py-cairo \
+  && export PYTHONPATH="/opt/graphite/lib/:/opt/graphite/webapp/" \
+  && pip install https://github.com/graphite-project/whisper/tarball/master \
+  && pip install https://github.com/graphite-project/carbon/tarball/master \
+  && pip install https://github.com/graphite-project/graphite-web/tarball/master \
+  && apk del \
+  alpine-sdk \
+  python-dev \
+  libffi-dev
+
+EXPOSE 8080
+EXPOSE 2003
+EXPOSE 2004
+EXPOSE 7002
+
+VOLUME ["/opt/graphite/conf", "/opt/graphite/storage"]
+
+COPY carbon_graphite/run.sh /run.sh
+COPY carbon_graphite/etc/ /etc/
+#COPY carbon_graphite/conf/ /opt/graphite/conf.example/
+COPY carbon_graphite/conf/ /opt/graphite/conf/
+
+
+ADD target/main-module-1.0.0.jar /benchmark/main-module-1.0.0.jar
+COPY carbon_graphite/run-component.sh /run-component.sh
+
+# Enable tiny init
+ENTRYPOINT ["/sbin/tini", "--"]
+
+CMD ["/bin/bash", "/run-component.sh"]

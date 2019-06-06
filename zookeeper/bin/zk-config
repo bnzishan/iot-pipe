@@ -1,0 +1,267 @@
+#!/bin/bash
+
+ORIG_IFS=$IFS # taking the backup of default IFS
+
+echo -e  "\$1=$1"
+export zookeeperEnsemble=$1
+
+#   $1=zookeeperEnsemble=172.17.0.3,172.17.0.4,172.17.0.5
+#   $1=zookeeperEnsemble=f1412eee47c4,308f342a3253,302747fca400
+
+IFS=', ' read -r -a zookeeperHostnameArray <<< "$zookeeperEnsemble"
+
+
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+function get-ip() {
+   IPvar3=$(/sbin/ip route | awk '/default/ { print $3 }')
+   echo " IPvar3 : $IPvar3"
+
+    IPvar2=$(/sbin/ip route | awk '/default/ { print $3 }')
+   echo " IPvar2 : $IPvar3"
+}
+
+ echo "-----------------------------------------------------------------------------------------"
+
+function docker-ips() {
+    docker ps | while read line; do
+        if `echo $line | grep -q 'CONTAINER ID'`; then
+            echo -e "IP ADDRESS\t$line"
+        else
+            CID=$(echo $line | awk '{print $1}');
+            IPp=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" $CID);
+            printf "${IPp}\t${line}\n"
+        fi
+    done;
+}
+
+ echo "-----------------------------------------------------------------------------------------"
+
+function get-ip2() {
+    CONTAINER_IP=$(shell docker inspect --format '{{ .NetworkSettings.IPAddress }}' $(CONTAINER_NAME))
+    echo $CONTAINER_IP
+}
+
+
+
+echo "-----------------------------------------------------------------------------------------"
+
+function my-id-dynamic(){
+    ZOO_MY_ID=$(($(echo $ZOO_MY_IP | cut -d . -f 4)-1))
+    echo "My ID: $ZOO_MY_ID"
+
+    echo "Initializing ZooKeeper with ID: $ZOO_MY_ID."
+    echo $ZOO_MY_ID > "$ZOO_DATA_DIR/myid"
+    zkServer-initialize.sh --myid=$ZOO_MY_ID
+}
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+get-ip
+#docker-ips
+
+
+HOSTNAME=`hostname`
+IPS=`hostname -i`
+echo "HOSTNAME====>$HOSTNAME";
+echo "IPS====>$IPS";
+IFS=" "
+read -r -a IP_ADDRESSES <<< "$IPS"
+echo "IP_ADDRESSES====>$IP_ADDRESSES";
+
+ echo "-----------------------------------------------------------------------------------------"
+
+
+zookeeperHostnameArraySize=${#zookeeperHostnameArray[@]}  #size i.e. number of zookeeper servers
+echo "number of zookeeper servers in the ensemble: $zookeeperHostnameArraySize"
+i=$zookeeperHostnameArraySize
+k=0
+	while [ $i -gt 0 ]
+	do
+	 echo ${zookeeperHostnameArray[k]}
+	 i=$(( $i - 1 ))
+	 k=$(( $k - 1 ))
+	done
+
+ echo "-----------------------------------------------------------------------------------------"
+
+ZK_CONF_DIR="/config"
+
+    if [  -f "$ZK_CONF_DIR/zoo_replicated1.cfg.dynamic" ];
+    then
+        echo "ZK_CONF_DIR/zoo_replicated1.cfg.dynamic   found!"
+        ZK_DYNAMIC_CONFIG_FILE="$ZK_CONF_DIR/zoo_replicated1.cfg.dynamic"
+     else
+        echo "ZK_CONF_DIR/zoo_replicated1.cfg.dynamic   not found!!! "
+    fi
+
+  if [  -f "$ZK_CONF_DIR/dynConfFile" ]; then
+        echo " new file not found!!!!!"
+  fi
+
+ echo "-----------------------------------------------------------------------------------------"
+
+touch "$ZK_CONF_DIR/dynConfFile"
+index=0
+         while IFS=$'\n' read  line
+          do
+              readLine=$line
+                echo "$readLine"
+                val=${zookeeperHostnameArray[index]}
+                echo " hostname: $val"
+                echo "${readLine/hostname/$val}" >> "$ZK_CONF_DIR/dynConfFile"
+               index=$(($index+1))
+                  echo " index after increment : $index"
+          done < "$ZK_DYNAMIC_CONFIG_FILE"
+
+echo "final $INDEX"
+
+ echo "-----------------------------------------------------------------------------------------"
+
+  if [  -f "$ZK_CONF_DIR/zoo_replicated1.cfg.dynamic" ]; then
+        echo "$ZK_CONF_DIR/zoo_replicated1.cfg.dynamic   yes found!!!!!"
+        mv "$ZK_CONF_DIR/zoo_replicated1.cfg.dynamic" "old"
+  fi
+
+   if [  -f "$ZK_CONF_DIR/dynConfFile" ]; then
+        echo " new file yes found!!!!!"
+          mv "$ZK_CONF_DIR/dynConfFile" "$ZK_CONF_DIR/zoo_replicated1.cfg.dynamic"
+   fi
+
+ echo "-----------------------------------------------------------------------------------------"
+
+
+while read line; do echo "$line"; done < /config/zoo_replicated1.cfg.dynamic
+
+ echo "-----------------------------------------------------------------------------------------"
+
+
+ZK_CONF_DIR="/config"
+ZK_CONF_FILE="zoo.cfg"
+MYID_REGEX="\\.([0-9]{1,3})="
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+
+if [  -f "$ZK_DATADIR/myid" ];
+then
+ echo "ZK_DATADIR/myid      found"
+ else
+ echo "ZK_DATADIR/myid       not found"
+ fi
+
+ echo "-----------------------------------------------------------------------------------------"
+
+if [  -d "$ZK_CONF_DIR" ];
+then
+ echo "ZK_CONF_DIR   found "
+ else
+ echo "ZK_CONF_DIR   not found"
+ fi
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+if [  -f "$ZK_CONF_DIR/$ZK_CONF_FILE" ];
+then
+ echo "ZK_CONF_DIR/$ZK_CONF_FILE   found"
+ else
+ echo "ZK_CONF_DIR/$ZK_CONF_FILE   not found"
+ fi
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+if [  -f "$ZK_CONF_DIR/zoo_replicated1.cfg.dynamic" ];
+then
+ echo "ZK_CONF_DIR/zoo_replicated1.cfg.dynamic   found"
+ else
+ echo "ZK_CONF_DIR/zoo_replicated1.cfg.dynamic   not found :( "
+ fi
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+function extractMyId {
+  if [[ $1 =~ $MYID_REGEX ]]
+  then
+    echo "${BASH_REMATCH[1]}"
+  else
+    echo "NaN"
+  fi
+}
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+while read line || [[ -n "$line" ]]
+do
+  if [[ $line = dataDir=* ]];
+  then
+    IFS="="
+    read -r key ZK_DATADIR <<< "$line"
+    [[ -d "$ZK_DATADIR" ]] || mkdir -p "$ZK_DATADIR"
+  fi
+  if [[ $line = dynamicConfigFile=* ]];
+  then
+    IFS="="
+    read -r key ZK_DYNAMIC_CONFIG_FILE <<< "$line"
+  fi
+done < "$ZK_CONF_DIR/$ZK_CONF_FILE"
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+
+HOSTNAME=`hostname`
+IFS=" "
+IPS=`hostname -i`
+echo "HOSTNAME====>$HOSTNAME";
+echo "IPS====>$IPS";
+read -r -a IP_ADDRESSES <<< "$IPS"
+echo "IP_ADDRESSES====>$IP_ADDRESSES";
+
+if [ ! -f "$ZK_DATADIR/myid" ]; then
+  while read line
+  do
+    echo "READING CONFIGLINE: $line"
+    if [[ $line == *"$HOSTNAME"* ]];   # in case, hostnames are provided
+    then
+                  echo "condition 1 met: $line"
+      MYID=`extractMyId "$line"`;
+      echo $MYID >> "$ZK_DATADIR/myid"
+      echo "Writing myid $MYID to $ZK_DATADIR/myid"
+      break;
+    else                              # in case, ips are provided
+	#for ip in `ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`
+	   echo "condition 2 met: $line"
+	for ip in ${IP_ADDRESSES[@]}
+	do
+	  if [[ $line == *"$ip"* ]];
+          then
+	    MYID=`extractMyId "$line"`;
+            echo $MYID >> "$ZK_DATADIR/myid"
+            echo "Writing myid $MYID to $ZK_DATADIR/myid"
+            break;
+          fi
+	done
+    fi
+  done < "$ZK_DYNAMIC_CONFIG_FILE"
+fi
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+echo "ZK_DATADIR:$ZK_DATADIR";
+echo "ZK_DYNAMIC_CONFIG_FILE:$ZK_DYNAMIC_CONFIG_FILE";
+echo "HOSTNAME:$HOSTNAME"
+echo "IPS:$IPS"
+
+
+ echo "-----------------------------------------------------------------------------------------"
+
+cd /app/bin && zk-config && ./zkServer.sh start-foreground

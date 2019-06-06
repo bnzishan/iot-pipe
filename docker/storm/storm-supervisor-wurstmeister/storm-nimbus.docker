@@ -1,0 +1,71 @@
+
+#FROM wurstmeister/base
+#MAINTAINER Wurstmeister
+
+#FROM ubuntu:trusty
+#MAINTAINER Wurstmeister
+#RUN apt-get update; apt-get install -y unzip openjdk-7-jre-headless wget supervisor docker.io openssh-server
+#ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64/
+
+
+
+FROM ubuntu:18.04
+MAINTAINER RightMesh AG, https://github.com/RightMesh
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install -y software-properties-common
+RUN apt-get install -y build-essential git
+RUN apt-get install -y openjdk-8-jre openjdk-8-jdk
+
+
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+ENV PATH $JAVA_HOME/bin:$PATH
+
+RUN apt-get update; apt-get install -y unzip  wget supervisor docker.io openssh-server
+
+ENV USER root
+#RUN echo 'root:wurstmeister' | chpasswd
+RUN mkdir /var/run/sshd
+#RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+EXPOSE 22
+
+#FROM wurstmeister/storm:0.9.4
+#MAINTAINER Wurstmeister
+
+
+RUN wget -q -O - http://mirrors.sonic.net/apache/storm/apache-storm-1.0.6/apache-storm-1.0.6.tar.gz | tar -xzf - -C /opt
+
+ENV STORM_HOME /opt/apache-storm-1.0.6
+RUN groupadd storm; useradd --gid storm --home-dir /home/storm --create-home --shell /bin/bash storm; chown -R storm:storm $STORM_HOME; mkdir /var/log/storm ; chown -R storm:storm /var/log/storm
+
+RUN ln -s $STORM_HOME/bin/storm /usr/bin/storm
+
+ADD storm_supervisord/storm/start-supervisor.sh /usr/bin/start-supervisor.sh
+ADD storm_supervisord/storm/storm.yaml $STORM_HOME/conf/storm.yaml
+ADD storm_supervisord/storm/cluster.xml $STORM_HOME/logback/cluster.xml
+ADD storm_supervisord/storm/config-supervisord.sh /usr/bin/config-supervisord.sh
+
+RUN echo [supervisord] | tee -a /etc/supervisor/supervisord.conf ; echo nodaemon=true | tee -a /etc/supervisor/supervisord.conf
+
+RUN /usr/bin/config-supervisord.sh nimbus
+RUN /usr/bin/config-supervisord.sh drpc
+
+EXPOSE 6627
+EXPOSE 3772
+EXPOSE 3773
+
+ADD target/main-module-1.0.0.jar /benchmark/main-module-1.0.0.jar
+ADD  storm_supervisord/storm-graphite-1.0.0-SNAPSHOT-all.jar $STORM_HOME/lib/storm-graphite-1.0.0-SNAPSHOT-all.jar
+
+
+COPY storm_supervisord/run-nimbus-component.sh /benchmark/run-nimbus-component.sh
+RUN chmod +x /benchmark/run-nimbus-component.sh
+CMD ["/benchmark/run-nimbus-component.sh"]
+
+

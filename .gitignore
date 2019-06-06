@@ -1,0 +1,29 @@
+### Intellij ###### Intellij ###
+## Directory-based project format
+.idea/
+## File-based project format
+*.ipr
+*.iml
+*.iws
+
+
+### Maven ###
+target/
+*/target/
+
+
+*.class
+*.logs
+#*.jar
+
+
+#MAC OS
+.DS_Store
+
+
+# ignore any large file
+
+
+extra/
+
+

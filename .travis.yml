@@ -1,0 +1,18 @@
+language: java
+before_install:
+  - make install-deps
+  - make dockerize-zk-dynamic-reconf
+script:
+  - make temp-benchmark
+ # - make package
+ # - make build-images
+ # - make temp-dockerized-benchmark
+addons:
+  hosts:
+    - rabbit
+services:
+  - docker
+sudo: required
+branches:
+  only:
+    - single3-dynZK

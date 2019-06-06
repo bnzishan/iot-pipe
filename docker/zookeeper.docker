@@ -1,0 +1,41 @@
+
+FROM openjdk:8-alpine
+
+MAINTAINER BNZ
+
+
+
+#RUN apt-get update && apt-get install -y vim
+
+ RUN apk --update add --no-cache  bash \
+    && rm -rf /var/cache/apk/*
+
+ADD zookeeper/zookeeper-3.5.2-alpha.tar.gz /benchmark
+
+#RUN rm -f /tmp/zookeeper-3.5.2-alpha.tar.gz
+
+RUN ln -s /benchmark/zookeeper-3.5.2-alpha /app
+RUN ln -s /benchmark/zookeeper-3.5.2-alpha/conf /config
+
+COPY zookeeper/zk-config /app/bin/zk-config
+COPY zookeeper/zoo.cfg /config/zoo.cfg
+COPY zookeeper/zoo_replicated1.cfg.dynamic /config/zoo_replicated1.cfg.dynamic
+COPY zookeeper/zkServer.sh /app/bin/zkServer.sh
+
+ENV ZOOKEEPER_HOME="/benchmark/zookeeper"
+ENV PATH $ZOOKEEPER_HOME/bin:$PATH
+
+COPY zookeeper/run1.sh /benchmark/run1.sh
+RUN chmod +x /benchmark/run1.sh
+
+RUN mkdir  /brokers
+RUN chmod +x /brokers
+
+ADD target/main-module-1.0.0.jar /benchmark/main-module-1.0.0.jar
+
+#CMD /run1.sh
+
+WORKDIR /benchmark
+CMD java -cp main-module-1.0.0.jar org.hobbit.core.run.ComponentStarter org.hobbit.sdk.iotpipeline_bm.system.zookeeper.ZKManager
+
+

@@ -1,0 +1,61 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix hobbit: <http://w3id.org/hobbit/vocab#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://project-hobbit.eu/iotpipe-benchmark/benchmark> a hobbit:Benchmark;
+    rdfs:label "IoTPipelineBenchmark (dev)"@en;
+    hobbit:imageName    "git.project-hobbit.eu:4567/bushran/iotpipe-benchmark/benchmark-controller";
+    hobbit:version "v1.0"@en;
+
+    hobbit:hasParameter <http://project-hobbit.eu/iotpipe-benchmark/dataInputFormat>;
+    hobbit:hasParameter <http://project-hobbit.eu/iotpipe-benchmark/pregenDataSets>;
+
+    hobbit:hasParameter <http://project-hobbit.eu/iotpipe-benchmark/tasks>;
+
+    hobbit:measuresKPI <http://project-hobbit.eu/iotpipe-benchmark/avgExecutionTimeT1>;
+    hobbit:measuresKPI <http://project-hobbit.eu/iotpipe-benchmark/avgExecutionTime>;
+    hobbit:measuresKPI <http://project-hobbit.eu/iotpipe-benchmark/throughput>;
+    hobbit:measuresKPI <http://project-hobbit.eu/iotpipe-benchmark/numOfTaskFailures>;
+
+    hobbit:hasAPI <http://project-hobbit.eu/iotpipe-benchmark/service> .
+
+<http://project-hobbit.eu/iotpipe-benchmark/avgExecutionTimeT1> a hobbit:KPI;
+    rdfs:comment " Task1 execution time in ms "@en;
+    rdfs:range  xsd:double .
+
+<http://project-hobbit.eu/iotpipe-benchmark/avgExecutionTime> a hobbit:KPI;
+    rdfs:comment "Average execution time in ms "@en;
+    rdfs:range  xsd:double .
+
+<http://project-hobbit.eu/iotpipe-benchmark/throughput> a hobbit:KPI;
+    rdfs:comment "Throughput "@en;
+    rdfs:range  xsd:unsignedInt .
+
+<http://project-hobbit.eu/iotpipe-benchmark/numOfTaskFailures> a hobbit:KPI;
+    rdfs:comment "numOfTaskFailures "@en;
+    rdfs:range  xsd:unsignedInt .
+
+
+<http://project-hobbit.eu/iotpipe-benchmark/dataInputFormat> a hobbit:Parameter, hobbit:ConfigurableParameter, hobbit:FeatureParameter;
+    rdfs:label "data input format"@en;
+    rdfs:range xsd:string;
+    hobbit:defaultValue ".dat"^^xsd:string .
+
+<http://project-hobbit.eu/iotpipe-benchmark/pregenDataSets> a hobbit:Parameter, hobbit:ConfigurableParameter, hobbit:FeatureParameter;
+     rdfs:label "pre gen dataset"@en;
+     rdfs:range xsd:string;
+     hobbit:defaultValue "sensors.dat"^^xsd:string .
+
+
+<http://project-hobbit.eu/iotpipe-benchmark/numOfTasks> a hobbit:Parameter, hobbit:ConfigurableParameter, hobbit:FeatureParameter;
+         rdfs:label "num Of Operations"@en;
+         rdfs:range xsd:unsignedInt;
+          hobbit:defaultValue "1"^^xsd:unsignedInt .
+
+
+
+<http://project-hobbit.eu/iotpipe-benchmark/tasks> a hobbit:Parameter, hobbit:ConfigurableParameter, hobbit:FeatureParameter;
+            rdfs:label "tasks"@en;
+            rdfs:comment "Task1:spike detection storm topology: spike_detection "@en;
+            rdfs:range xsd:string;
+            hobbit:defaultValue "spike_detection"^^xsd:string .
